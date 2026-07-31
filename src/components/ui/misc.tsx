@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
 import { AVATAR_COLORS, type AvatarColor } from "@/lib/constants";
+import { InfoHint } from "@/components/ui/info-hint";
+import { type HelpEntry } from "@/lib/help";
 import { cn, clamp, initials } from "@/lib/utils";
 
 /* ── Avatar ────────────────────────────────────────────────────── */
@@ -264,19 +266,23 @@ export function PageHeader({
   action,
   breadcrumb,
   className,
+  help,
 }: {
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
   breadcrumb?: ReactNode;
   className?: string;
+  /** Shows a ⓘ beside the title explaining what feeds this page. */
+  help?: HelpEntry;
 }) {
   return (
     <header className={cn("mb-6 flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="min-w-0">
         {breadcrumb ? <div className="mb-1.5">{breadcrumb}</div> : null}
-        <h1 className="truncate text-[22px] leading-8 font-semibold sm:text-2xl">
-          {title}
+        <h1 className="flex items-center gap-2 text-[22px] leading-8 font-semibold sm:text-2xl">
+          <span className="truncate">{title}</span>
+          {help ? <InfoHint help={help} /> : null}
         </h1>
         {description ? (
           <p className="text-muted mt-1 text-[13.5px] leading-5">{description}</p>

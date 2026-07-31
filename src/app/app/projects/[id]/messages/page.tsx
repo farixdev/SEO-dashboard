@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/ui/misc";
 import { getThread, listMessages, listThreads } from "@/db/queries/messages";
 import { MessageThread } from "@/features/messages/message-thread";
 import { ThreadList, ThreadPlaceholder } from "@/features/messages/thread-list";
+import { HELP } from "@/lib/help";
 import { requireProjectAccess } from "@/lib/auth";
 
 export default async function ProjectMessagesPage({
@@ -32,6 +33,7 @@ export default async function ProjectMessagesPage({
   return (
     <>
       <PageHeader
+          help={HELP.messages}
         title="Messages"
         description="Talk to the client, or keep notes in an internal thread they cannot see."
       />

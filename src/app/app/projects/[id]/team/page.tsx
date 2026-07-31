@@ -26,6 +26,7 @@ import {
   getTeamOutputTrend,
   getTeamPerformance,
 } from "@/db/queries/team";
+import { HELP } from "@/lib/help";
 import { requireProjectAccess } from "@/lib/auth";
 import {  formatNumber,
   formatPercent,
@@ -60,6 +61,7 @@ export default async function TeamPage({
   return (
     <>
       <PageHeader
+          help={HELP.teamPerformance}
         title="Team performance"
         description="Link-building output per specialist, all time and for the selected month."
         action={

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/misc";
 import { db } from "@/db";
 import { projectMembers, projects, users } from "@/db/schema";
 import { UserManager } from "@/features/users/user-manager";
+import { HELP } from "@/lib/help";
 import { requireAdmin } from "@/lib/auth";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, USER_ROLES } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils";
@@ -87,6 +88,7 @@ export default async function TeamAdminPage() {
   return (
     <>
       <PageHeader
+          help={HELP.people}
         title="People & access"
         description="Team accounts for the console, and client logins for the portal."
       />

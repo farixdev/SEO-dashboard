@@ -12,6 +12,7 @@ import {
   type TaskCategory,
   type TaskStatus,
 } from "@/lib/constants";
+import { HELP } from "@/lib/help";
 import { requirePortalProject } from "@/lib/portal";
 import { formatDate, formatNumber, percentOf, relativeTime } from "@/lib/utils";
 
@@ -38,7 +39,8 @@ export default async function PortalProgressPage() {
   if (tasks.length === 0) {
     return (
       <>
-        <PageHeader title="What we're working on" />
+        <PageHeader
+          help={HELP.tasks} title="What we're working on" />
         <Card>
           <EmptyState
             icon={<ListChecks className="size-6" />}

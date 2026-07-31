@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/ui/misc";
 import { ImportPanel } from "@/features/import/import-panel";
+import { HELP } from "@/lib/help";
 import { requireProjectAccess } from "@/lib/auth";
 import { requireStaff } from "@/lib/auth";
 
@@ -25,6 +26,7 @@ export default async function ImportPage({
   return (
     <>
       <PageHeader
+          help={HELP.importPanel}
         title="Import data"
         description="Move your spreadsheet in. Paste rows straight from Excel or Google Sheets — headers are matched to the sheet names you already use."
       />

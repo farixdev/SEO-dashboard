@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { InfoHint } from "@/components/ui/info-hint";
+import { type HelpEntry } from "@/lib/help";
 import { cn } from "@/lib/utils";
 
 export function Card({
@@ -24,12 +26,15 @@ export function CardHeader({
   action,
   className,
   icon,
+  help,
 }: {
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
   className?: string;
   icon?: ReactNode;
+  /** Shows a ⓘ beside the section title explaining what feeds it. */
+  help?: HelpEntry;
 }) {
   return (
     <div
@@ -45,7 +50,10 @@ export function CardHeader({
           </span>
         ) : null}
         <div className="min-w-0">
-          <h2 className="truncate text-[15px] leading-6 font-semibold">{title}</h2>
+          <h2 className="flex items-center gap-1.5 text-[15px] leading-6 font-semibold">
+            <span className="truncate">{title}</span>
+            {help ? <InfoHint help={help} /> : null}
+          </h2>
           {description ? (
             <p className="text-muted mt-0.5 text-[13px] leading-5">{description}</p>
           ) : null}

@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/ui/misc";
 import { resolveReportMonth } from "@/db/queries/dashboard";
 import { listPages } from "@/db/queries/pages";
 import { PagesTable } from "@/features/pages/pages-table";
+import { HELP } from "@/lib/help";
 import { PAGE_TYPES } from "@/lib/constants";
 import { requirePortalProject } from "@/lib/portal";
 import { type RawSearchParams, parseListQuery, totalPages } from "@/lib/query";
@@ -40,6 +41,7 @@ export default async function PortalOnPagePage({
   return (
     <>
       <PageHeader
+          help={HELP.pages}
         title="Pages & content"
         description="The on-page work completed on each page of your site, and how many keywords each one targets."
       />

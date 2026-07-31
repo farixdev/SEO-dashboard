@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/misc";
 import { listAnalytics, summariseAnalytics } from "@/db/queries/analytics";
 import { AnalyticsView } from "@/features/analytics/analytics-view";
+import { HELP } from "@/lib/help";
 import { requirePortalProject } from "@/lib/portal";
 import { compactNumber, formatNumber, formatPercent } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ export default async function PortalAnalyticsPage() {
   return (
     <>
       <PageHeader
+          help={HELP.analytics}
         title="Search performance"
         description="Straight from Google Search Console and Analytics: how often you appear, and how many people visit."
         action={

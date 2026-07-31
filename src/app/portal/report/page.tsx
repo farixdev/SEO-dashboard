@@ -31,6 +31,7 @@ import {
 } from "@/db/queries/dashboard";
 import { getRankMovers } from "@/db/queries/keywords";
 import { listTasks } from "@/db/queries/tasks";
+import { HELP } from "@/lib/help";
 import { requirePortalProject } from "@/lib/portal";
 import {
   compactNumber,  formatDate,
@@ -90,6 +91,7 @@ export default async function PortalReportPage({
     <>
       <div className="no-print">
         <PageHeader
+          help={HELP.clientReport}
           title="Monthly report"
           description="A printable summary of the month. Use your browser's print dialog to save it as a PDF."
           action={

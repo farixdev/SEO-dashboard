@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/misc";
 import { getProjectStaff } from "@/db/queries/team";
 import { getTaskStats, groupTasksByStatus, listTasks } from "@/db/queries/tasks";
 import { TaskBoard } from "@/features/tasks/task-board";
+import { HELP } from "@/lib/help";
 import { requireProjectAccess } from "@/lib/auth";
 import { formatNumber, percentOf, formatPercent } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export default async function TasksPage({
   return (
     <>
       <PageHeader
+          help={HELP.tasks}
         title="Deliverables"
         description="The work board for this project. Anything marked client-visible shows on the client's progress page."
       />

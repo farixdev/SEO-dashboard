@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/misc";
 import { getThread, listMessages, listThreads } from "@/db/queries/messages";
 import { MessageThread } from "@/features/messages/message-thread";
 import { ThreadList, ThreadPlaceholder } from "@/features/messages/thread-list";
+import { HELP } from "@/lib/help";
 import { requireStaff } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Inbox" };
@@ -35,6 +36,7 @@ export default async function InboxPage({
   return (
     <>
       <PageHeader
+          help={HELP.messages}
         title="Inbox"
         description={
           unread > 0
