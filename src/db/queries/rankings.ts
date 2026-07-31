@@ -5,7 +5,7 @@ import { and, asc, count, desc, eq, ilike, inArray, isNotNull, or, sql } from "d
 import { db } from "@/db";
 import { keywords, pages, rankings } from "@/db/schema";
 import { CACHE_TTL, cachedQuery, tags } from "@/lib/cache";
-import { addMonths, monthLabel } from "@/lib/utils";
+import { addMonths, currentMonthKey, monthLabel } from "@/lib/utils";
 
 /* ════════════════════════════════════════════════════════════════
    The "Keyword Analysis" sheet was 16 month-columns wide and grew a
@@ -41,6 +41,43 @@ async function getRankMonthsUncached(projectId: string) {
 export const getRankMonths = cachedQuery(
   "rankings:rank-months",
   getRankMonthsUncached,
+  (projectId) => [tags.project(projectId), tags.rankings(projectId)],
+  CACHE_TTL.reference,
+);
+
+
+/* ── Gaps in the rank history ──────────────────────────────────── */
+
+async function uncachedGetMissingRankMonths(projectId: string) {
+  const recorded = await getRankMonthsUncached(projectId);
+  if (recorded.length === 0) return [];
+
+  /*
+   * Nobody was told when a month had been skipped. Recording a month means
+   * opening the entry grid and typing a position per keyword, so it is easy
+   * to miss one — and a gap is invisible afterwards, because the charts just
+   * join the two months either side of it and look continuous.
+   *
+   * Walks from the first month that has data up to last month. The current
+   * month is deliberately excluded: it is not late until it is over.
+   */
+  const present = new Set(recorded);
+  const first = recorded[0];
+  const cutoff = addMonths(currentMonthKey(), -1);
+
+  const gaps: string[] = [];
+  for (let m = first; m <= cutoff; m = addMonths(m, 1)) {
+    if (!present.has(m)) gaps.push(m);
+    // Guard against a bad `first` producing an unbounded walk.
+    if (gaps.length > 60) break;
+  }
+  return gaps;
+}
+
+/** Months between the first recorded one and last month that hold no positions. */
+export const getMissingRankMonths = cachedQuery(
+  "rankings:missing-months",
+  uncachedGetMissingRankMonths,
   (projectId) => [tags.project(projectId), tags.rankings(projectId)],
   CACHE_TTL.reference,
 );

@@ -25,7 +25,8 @@
     "verify:gate": "node scripts/verify-staff-gate.mjs",
     "db:sync": "tsx scripts/sync-backlinks.ts",
     "verify:cache": "node scripts/verify-cache.mjs",
-    "verify:chat": "node scripts/verify-chat.mjs"
+    "verify:chat": "node scripts/verify-chat.mjs",
+    "db:baseline": "tsx scripts/baseline-migrations.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
