@@ -13,6 +13,7 @@ export function Dropdown({
   className,
   triggerClassName,
   label = "Open menu",
+  side = "bottom",
 }: {
   trigger?: ReactNode;
   children: ReactNode | ((close: () => void) => ReactNode);
@@ -21,6 +22,12 @@ export function Dropdown({
   /** Override the default icon-button styling — e.g. for a full-width row. */
   triggerClassName?: string;
   label?: string;
+  /**
+   * Which way the menu opens. A trigger sitting at the bottom of a full-height
+   * sidebar needs "top" — opening downward puts the menu below the viewport,
+   * where it is invisible and the user concludes the button is broken.
+   */
+  side?: "bottom" | "top";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -76,7 +83,8 @@ export function Dropdown({
             else setOpen(false);
           }}
           className={cn(
-            "panel animate-pop absolute z-40 mt-1.5 min-w-48 overflow-hidden p-1.5",
+            "panel-lg animate-pop absolute z-40 min-w-48 overflow-hidden p-1.5",
+            side === "top" ? "bottom-full mb-1.5" : "mt-1.5",
             align === "end" ? "right-0" : "left-0",
             className,
           )}

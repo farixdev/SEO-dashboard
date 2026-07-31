@@ -125,6 +125,12 @@ function SidebarNav({
 function UserMenu({ user, settingsHref }: { user: ShellUser; settingsHref: string }) {
   return (
     <Dropdown
+      /*
+       * This sits in the sidebar footer, pinned to the bottom of the viewport.
+       * Opening downward put the whole menu — including Sign out — below the
+       * fold, so clicking your own avatar appeared to do nothing.
+       */
+      side="top"
       align="start"
       label="Account menu"
       className="min-w-56"
