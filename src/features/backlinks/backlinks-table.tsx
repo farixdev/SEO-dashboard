@@ -43,11 +43,13 @@ export function BacklinksTable({
   projectId,
   rows,
   assignees,
+  currentUserId,
   canEdit,
 }: {
   projectId: string;
   rows: BacklinkRow[];
   assignees: AssigneeOption[];
+  currentUserId: string;
   canEdit: boolean;
 }) {
   const [selectedRaw, setSelected] = useState<Set<string>>(new Set());
@@ -341,6 +343,7 @@ export function BacklinksTable({
             projectId={projectId}
             row={null}
             assignees={assignees}
+            currentUserId={currentUserId}
           />
           <BacklinkForm
             open={editing !== null}
@@ -348,6 +351,7 @@ export function BacklinksTable({
             projectId={projectId}
             row={editing}
             assignees={assignees}
+            currentUserId={currentUserId}
           />
           <DeleteBacklink
             row={deleting}

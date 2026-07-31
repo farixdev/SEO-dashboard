@@ -149,7 +149,14 @@ export default async function BacklinksPage({
         projectId={id}
         rows={rows}
         canEdit={canEdit}
-        assignees={staff.map((a) => ({ id: a.id, name: a.name }))}
+        // Always include yourself, so "Built by" can default to you even on a
+        // project you are not formally a member of.
+        assignees={
+          staff.some((a) => a.id === user.id)
+            ? staff.map((a) => ({ id: a.id, name: a.name }))
+            : [{ id: user.id, name: user.name }, ...staff.map((a) => ({ id: a.id, name: a.name }))]
+        }
+        currentUserId={user.id}
       />
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

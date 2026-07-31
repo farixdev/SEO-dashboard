@@ -22,6 +22,7 @@ import {
   getAvailableMonths,
 } from "@/db/queries/dashboard";
 import { BacklinksTable } from "@/features/backlinks/backlinks-table";
+import { HELP } from "@/lib/help";
 import { BACKLINK_TYPES } from "@/lib/constants";
 import { requirePortalProject } from "@/lib/portal";
 import { type RawSearchParams, parseListQuery, totalPages } from "@/lib/query";
@@ -54,6 +55,7 @@ export default async function PortalBacklinksPage({
   return (
     <>
       <PageHeader
+          help={HELP.backlinks}
         title="Backlinks"
         description="Every link your team has built to your site, with the authority and index status of each placement."
       />
@@ -134,6 +136,8 @@ export default async function PortalBacklinksPage({
         projectId={projectId}
         rows={rows}
         assignees={[]}
+        // Read-only: the form is never rendered here.
+        currentUserId=""
         canEdit={false}
       />
 

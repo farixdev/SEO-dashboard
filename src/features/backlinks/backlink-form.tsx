@@ -20,6 +20,7 @@ export function BacklinkForm({
   projectId,
   row,
   assignees,
+  currentUserId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,6 +28,8 @@ export function BacklinkForm({
   /** null → create mode */
   row: BacklinkRow | null;
   assignees: AssigneeOption[];
+  /** Whoever is adding the link — credited by default. */
+  currentUserId: string;
 }) {
   const [state, action, pending] = useActionState(saveBacklinkAction, idle);
   const toast = useToast();
@@ -131,11 +134,19 @@ export function BacklinkForm({
             defaultValue={row?.publishedDate ?? ""}
             error={state.errors?.publishedDate}
           />
+          {/*
+            Every link is somebody's work, and "Unassigned" was the default —
+            so credit was lost by simply not touching the field, and the team
+            performance table under-counted whoever built it. New links are
+            credited to the person adding them; an existing link keeps whoever
+            it already had. The list always contains you, even on a project you
+            are not formally a member of, so the default is always selectable.
+          */}
           <Select
             label="Built by"
             name="assigneeId"
-            placeholder="Unassigned"
-            defaultValue={row?.assigneeId ?? ""}
+            required
+            defaultValue={row?.assigneeId ?? currentUserId}
             options={assignees.map((a) => ({ value: a.id, label: a.name }))}
             error={state.errors?.assigneeId}
           />
