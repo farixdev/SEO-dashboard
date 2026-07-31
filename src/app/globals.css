@@ -1,0 +1,532 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════
+   STUDIO — a crisp, high-contrast product surface.
+
+   What changed from the old "clay" system, and why:
+
+     · Surfaces are defined by a hairline border, not by a shadow.
+       Big soft drop-shadows on every card make a dense data tool look
+       inflated and blurry; a 1px line reads as precision and lets
+       tables sit flush against each other.
+     · Radii came down from 24-32px to 10-18px. Very round corners
+       waste horizontal space in tables and read as playful, which is
+       wrong for a reporting tool a client will forward to their board.
+     · Neutrals moved from warm sand to a near-neutral with a faint cool
+       cast, so the accent and the status colours are the only warmth on
+       screen and the eye goes to the data.
+     · Elevation is now a 3-step scale used sparingly — flat for cards,
+       one step for menus, two for modals — instead of every panel
+       floating.
+   ════════════════════════════════════════════════════════════════ */
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+
+  /* ── Brand ramp (indigo → violet) ── */
+  --color-brand-50: oklch(0.976 0.012 280);
+  --color-brand-100: oklch(0.948 0.028 280);
+  --color-brand-200: oklch(0.898 0.058 280);
+  --color-brand-300: oklch(0.822 0.102 279);
+  --color-brand-400: oklch(0.724 0.152 278);
+  --color-brand-500: oklch(0.628 0.192 277);
+  --color-brand-600: oklch(0.548 0.212 277);
+  --color-brand-700: oklch(0.474 0.196 277);
+  --color-brand-800: oklch(0.402 0.164 277);
+  --color-brand-900: oklch(0.342 0.13 277);
+  --color-brand-950: oklch(0.238 0.09 278);
+
+  /* ── Neutrals (near-grey, faint cool cast) ── */
+  --color-ink-25: oklch(0.992 0.001 265);
+  --color-ink-50: oklch(0.981 0.002 265);
+  --color-ink-100: oklch(0.962 0.003 265);
+  --color-ink-200: oklch(0.925 0.004 265);
+  --color-ink-300: oklch(0.869 0.006 265);
+  --color-ink-400: oklch(0.708 0.009 265);
+  --color-ink-500: oklch(0.578 0.011 265);
+  --color-ink-600: oklch(0.468 0.012 265);
+  --color-ink-700: oklch(0.375 0.011 265);
+  --color-ink-800: oklch(0.268 0.009 265);
+  --color-ink-850: oklch(0.212 0.008 265);
+  --color-ink-900: oklch(0.172 0.007 265);
+  --color-ink-950: oklch(0.128 0.006 265);
+
+  /* ── Status accents ── */
+  --color-mint-100: oklch(0.945 0.048 165);
+  --color-mint-500: oklch(0.708 0.148 164);
+  --color-mint-600: oklch(0.618 0.144 163);
+  --color-mint-700: oklch(0.516 0.124 163);
+
+  --color-amber-100: oklch(0.958 0.058 92);
+  --color-amber-500: oklch(0.788 0.155 76);
+  --color-amber-600: oklch(0.702 0.158 62);
+  --color-amber-700: oklch(0.582 0.142 55);
+
+  --color-rose-100: oklch(0.948 0.032 15);
+  --color-rose-500: oklch(0.648 0.212 18);
+  --color-rose-600: oklch(0.576 0.216 18);
+  --color-rose-700: oklch(0.502 0.194 19);
+
+  --color-sky-100: oklch(0.955 0.032 232);
+  --color-sky-500: oklch(0.692 0.148 236);
+  --color-sky-600: oklch(0.598 0.154 240);
+  --color-sky-700: oklch(0.508 0.138 243);
+
+  /* ── Radii ── */
+  --radius-panel: 0.875rem;
+  --radius-panel-sm: 0.625rem;
+  --radius-panel-lg: 1.125rem;
+
+  /* ── Charts (ordered by first use, distinguishable in greyscale) ── */
+  --color-chart-1: oklch(0.628 0.192 277);
+  --color-chart-2: oklch(0.708 0.148 164);
+  --color-chart-3: oklch(0.692 0.148 236);
+  --color-chart-4: oklch(0.788 0.155 76);
+  --color-chart-5: oklch(0.648 0.19 18);
+  --color-chart-6: oklch(0.612 0.118 318);
+  --color-chart-7: oklch(0.742 0.112 132);
+  --color-chart-8: oklch(0.602 0.088 210);
+}
+
+/* ── Runtime tokens: light ───────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+
+  --surface-app: oklch(0.978 0.002 265);
+  --surface-raised: oklch(1 0 0);
+  --surface-sunken: oklch(0.968 0.003 265);
+  --surface-panel: oklch(0.993 0.001 265);
+  --surface-hover: oklch(0.962 0.004 265);
+
+  --text-strong: oklch(0.205 0.011 265);
+  --text-body: oklch(0.378 0.011 265);
+  --text-muted: oklch(0.545 0.012 265);
+  --text-faint: oklch(0.658 0.011 265);
+
+  --line-soft: oklch(0.922 0.004 265);
+  --line-strong: oklch(0.868 0.006 265);
+
+  --accent: var(--color-brand-600);
+  --accent-hover: var(--color-brand-700);
+  --accent-soft: oklch(0.956 0.022 280);
+  --accent-ring: oklch(0.628 0.192 277 / 0.32);
+  --on-accent: oklch(1 0 0);
+
+  /*
+   * Three steps, used sparingly. Cards are flat — a border does the
+   * separating — and elevation is reserved for things that genuinely
+   * float above the page.
+   */
+  --elev-1: 0 1px 2px oklch(0.2 0.02 265 / 0.05);
+  --elev-2:
+    0 1px 3px oklch(0.2 0.02 265 / 0.07), 0 2px 8px -2px oklch(0.2 0.02 265 / 0.06);
+  --elev-3:
+    0 8px 24px -6px oklch(0.2 0.02 265 / 0.12),
+    0 20px 48px -16px oklch(0.2 0.02 265 / 0.14);
+
+  /* Kept for the handful of call sites that reference them directly. */
+  --rim: inset 0 1px 0 oklch(1 0 0 / 0.6);
+  --inset-well: inset 0 1px 2px oklch(0.2 0.02 265 / 0.05);
+}
+
+/* ── Runtime tokens: dark ────────────────────────────────────── */
+
+.dark {
+  color-scheme: dark;
+
+  --surface-app: oklch(0.146 0.006 265);
+  --surface-raised: oklch(0.187 0.007 265);
+  --surface-sunken: oklch(0.166 0.006 265);
+  --surface-panel: oklch(0.206 0.008 265);
+  --surface-hover: oklch(0.238 0.009 265);
+
+  --text-strong: oklch(0.976 0.003 265);
+  --text-body: oklch(0.872 0.005 265);
+  --text-muted: oklch(0.682 0.008 265);
+  --text-faint: oklch(0.552 0.009 265);
+
+  --line-soft: oklch(0.268 0.008 265);
+  --line-strong: oklch(0.338 0.01 265);
+
+  --accent: var(--color-brand-400);
+  --accent-hover: var(--color-brand-300);
+  --accent-soft: oklch(0.288 0.062 278);
+  --accent-ring: oklch(0.724 0.152 278 / 0.4);
+  --on-accent: oklch(0.158 0.02 278);
+
+  --elev-1: 0 1px 2px oklch(0 0 0 / 0.32);
+  --elev-2: 0 1px 3px oklch(0 0 0 / 0.4), 0 2px 8px -2px oklch(0 0 0 / 0.36);
+  --elev-3:
+    0 8px 24px -6px oklch(0 0 0 / 0.5), 0 20px 48px -16px oklch(0 0 0 / 0.55);
+
+  --rim: inset 0 1px 0 oklch(1 0 0 / 0.04);
+  --inset-well: inset 0 1px 2px oklch(0 0 0 / 0.24);
+}
+
+/* ── Base ────────────────────────────────────────────────────── */
+
+@layer base {
+  * {
+    border-color: var(--line-soft);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--surface-app);
+    color: var(--text-body);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv11", "ss01";
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--text-strong);
+    font-weight: 600;
+    /* Tighter than the old -0.014em: display sizes need more negative
+       tracking than body copy to look set rather than typed. */
+    letter-spacing: -0.021em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--text-strong);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-panel-sm);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
+    background-clip: content-box;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+/* ── Surfaces ────────────────────────────────────────────────── */
+
+/** The default card: flat, separated by a hairline. */
+@utility panel {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--elev-1);
+}
+
+@utility panel-sm {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-panel-sm);
+  box-shadow: var(--elev-1);
+}
+
+/** Things that float: menus, popovers, modals. */
+@utility panel-lg {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-panel-lg);
+  box-shadow: var(--elev-3);
+}
+
+/** No elevation at all — for panels sitting inside another panel. */
+@utility panel-flat {
+  background-color: var(--surface-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-panel);
+}
+
+/** A recessed area: inputs, read-only detail rows, list items. */
+@utility well {
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-panel-sm);
+}
+
+@utility panel-interactive {
+  transition:
+    border-color 140ms ease,
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 140ms ease;
+  &:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--elev-2);
+  }
+  &:active {
+    box-shadow: var(--elev-1);
+  }
+}
+
+/* ── Text and surface helpers ────────────────────────────────── */
+
+@utility text-strong {
+  color: var(--text-strong);
+}
+@utility text-body {
+  color: var(--text-body);
+}
+@utility text-muted {
+  color: var(--text-muted);
+}
+@utility text-faint {
+  color: var(--text-faint);
+}
+
+@utility surface-app {
+  background-color: var(--surface-app);
+}
+@utility surface-raised {
+  background-color: var(--surface-raised);
+}
+@utility surface-sunken {
+  background-color: var(--surface-sunken);
+}
+@utility surface-panel {
+  background-color: var(--surface-panel);
+}
+
+@utility line-soft {
+  border-color: var(--line-soft);
+}
+@utility line-strong {
+  border-color: var(--line-strong);
+}
+
+/** Numeric columns in dense tables. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/** Sticky table headers: rows slide under a solid bar with a real edge. */
+@utility sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--surface-panel);
+  border-bottom: 1px solid var(--line-soft);
+  backdrop-filter: blur(8px);
+}
+
+/** Section label — small, spaced, uppercase. Used above panels. */
+@utility eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/** Large figures: the one place where tracking goes negative hard. */
+@utility figure-xl {
+  font-size: clamp(2rem, 1.4rem + 2vw, 2.75rem);
+  line-height: 1.05;
+  font-weight: 650;
+  letter-spacing: -0.032em;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Motion ──────────────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* The indeterminate top bar: a band that sweeps, so it reads as "working"
+   without pretending to know a percentage. */
+@keyframes route-progress {
+  0% {
+    transform: translateX(-100%) scaleX(0.4);
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.7);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.4);
+  }
+}
+
+@keyframes spin-fast {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-fade-up {
+  animation: fade-up 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@utility animate-fade {
+  animation: fade-in 200ms ease both;
+}
+@utility animate-pop {
+  animation: pop-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@utility animate-spin-slow {
+  animation: spin-fast 900ms linear infinite;
+}
+
+/**
+ * Loading placeholder. The sweep is a light band in light mode and a
+ * lighter-than-surface band in dark mode, so it reads on both.
+ */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-panel-sm);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 0.42),
+      transparent
+    );
+    animation: shimmer-sweep 1.5s infinite;
+  }
+}
+
+.dark .skeleton::after {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.07),
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Print (the monthly client report) ───────────────────────── */
+
+@media print {
+  :root {
+    --surface-app: #fff;
+    --surface-raised: #fff;
+    --surface-panel: #fff;
+    --surface-sunken: #f6f6f8;
+    --elev-1: none;
+    --elev-2: none;
+    --elev-3: none;
+    --rim: none;
+    --inset-well: none;
+  }
+  body {
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-break {
+    break-before: page;
+  }
+  .panel,
+  .panel-sm,
+  .panel-lg,
+  .panel-flat {
+    border: 1px solid #e3e3e8;
+    box-shadow: none !important;
+  }
+  /* Charts are fixed-width SVGs; keep them inside the paper. */
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}

@@ -1,0 +1,175 @@
+my-project/
+│
+├── client/                 # Next.js
+├── server/                 # NestJS
+│
+├── docs/
+│   ├── api
+│   ├── database
+│   ├── diagrams
+│   └── requirements
+│
+├── docker/
+│
+├── scripts/
+│
+├── .github/
+│   └── workflows/
+│
+├── .gitignore
+├── README.md
+├── docker-compose.yml
+└── LICENSE
+
+
+next:
+client/
+│
+├── public/
+│   ├── images/
+│   ├── icons/
+│   ├── fonts/
+│   └── favicon.ico
+│
+├── src/
+│
+│   ├── app/
+│   │   ├── (auth)/
+│   │   ├── (dashboard)/
+│   │   ├── api/
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── loading.tsx
+│   │   ├── error.tsx
+│   │   ├── not-found.tsx
+│   │   └── page.tsx
+│   │
+│   ├── components/
+│   │   ├── common/
+│   │   ├── forms/
+│   │   ├── layout/
+│   │   ├── ui/
+│   │   ├── cards/
+│   │   ├── tables/
+│   │   ├── charts/
+│   │   ├── dialogs/
+│   │   └── navigation/
+│   │
+│   ├── features/
+│   │   ├── auth/
+│   │   ├── users/
+│   │   ├── dashboard/
+│   │   └── settings/
+│   │
+│   ├── hooks/
+│   │
+│   ├── lib/
+│   │   ├── axios.ts
+│   │   ├── auth.ts
+│   │   ├── queryClient.ts
+│   │   ├── validations.ts
+│   │   └── utils.ts
+│   │
+│   ├── services/
+│   │   ├── auth.service.ts
+│   │   ├── user.service.ts
+│   │   └── api.ts
+│   │
+│   ├── store/
+│   │
+│   ├── providers/
+│   │
+│   ├── context/
+│   │
+│   ├── types/
+│   │
+│   ├── constants/
+│   │
+│   ├── config/
+│   │
+│   ├── styles/
+│   │
+│   ├── assets/
+│   │
+│   ├── middleware.ts
+│   │
+│   └── generated/
+│
+├── tests/
+│
+├── .env.local
+├── .env.example
+├── next.config.ts
+├── tsconfig.json
+├── package.json
+└── eslint.config.js
+
+NestJS
+server/
+│
+├── src/
+│
+│   ├── auth/
+│   │
+│   ├── users/
+│   │
+│   ├── roles/
+│   │
+│   ├── permissions/
+│   │
+│   ├── uploads/
+│   │
+│   ├── mail/
+│   │
+│   ├── notifications/
+│   │
+│   ├── health/
+│   │
+│   ├── common/
+│   │   ├── decorators/
+│   │   ├── dto/
+│   │   ├── enums/
+│   │   ├── exceptions/
+│   │   ├── filters/
+│   │   ├── guards/
+│   │   ├── interceptors/
+│   │   ├── interfaces/
+│   │   ├── middleware/
+│   │   ├── pipes/
+│   │   ├── utils/
+│   │   └── constants/
+│   │
+│   ├── config/
+│   │
+│   ├── database/
+│   │   ├── prisma/
+│   │   ├── migrations/
+│   │   ├── seeds/
+│   │   └── database.module.ts
+│   │
+│   ├── jobs/
+│   │
+│   ├── cache/
+│   │
+│   ├── websocket/
+│   │
+│   ├── app.module.ts
+│   ├── main.ts
+│   └── app.controller.ts
+│
+├── test/
+│
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed.ts
+│
+├── uploads/
+│
+├── logs/
+│
+├── .env
+├── .env.example
+├── nest-cli.json
+├── tsconfig.json
+└── package.json

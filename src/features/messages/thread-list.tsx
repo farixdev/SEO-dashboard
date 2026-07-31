@@ -1,0 +1,328 @@
+"use client";
+
+import { CheckCircle2, Lock, MessageSquarePlus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useActionState, useEffect, useState, useTransition } from "react";
+
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
+import { Checkbox, Input, Textarea } from "@/components/ui/field";
+import { Avatar, EmptyState } from "@/components/ui/misc";
+import { useToast } from "@/components/ui/toast";
+import { idle } from "@/lib/action-state";
+import { cn, relativeTime, truncate } from "@/lib/utils";
+
+import {
+  createThreadAction,
+  deleteThreadAction,
+  toggleThreadStatusAction,
+} from "./actions";
+
+export type ThreadListItem = {
+  id: string;
+  projectId: string;
+  projectName: string | null;
+  subject: string;
+  status: string;
+  isInternal: boolean;
+  lastMessageAt: string;
+  messageCount: number;
+  unread: number;
+  lastMessage: string | null;
+  lastAuthor: string | null;
+  lastAuthorColor: string | null;
+};
+
+export function ThreadList({
+  threads,
+  activeId,
+  basePath,
+  projectId,
+  canStartInternal,
+  showProjectName = false,
+  canDelete,
+}: {
+  threads: ThreadListItem[];
+  activeId?: string;
+  /**
+   * Route that owns this list; the thread id is appended as `?thread=`.
+   * A plain string rather than a builder function, because a Server Component
+   * cannot pass a function across the boundary to a Client Component.
+   */
+  basePath: string;
+  /** null on the cross-project inbox, where a project must be chosen first */
+  projectId: string | null;
+  canStartInternal: boolean;
+  showProjectName?: boolean;
+  canDelete: boolean;
+}) {
+  const [composing, setComposing] = useState(false);
+  const [deleting, setDeleting] = useState<ThreadListItem | null>(null);
+  const [, startTransition] = useTransition();
+
+  return (
+    <div className="panel flex max-h-[calc(100dvh-19rem)] min-h-[420px] flex-col overflow-hidden">
+      <div
+        className="flex items-center justify-between gap-2 border-b px-4 py-3"
+        style={{ borderColor: "var(--line-soft)" }}
+      >
+        <h2 className="text-strong text-[13.5px] font-semibold">Conversations</h2>
+        {projectId ? (
+          <Button variant="secondary" size="sm" onClick={() => setComposing(true)}>
+            <MessageSquarePlus className="size-3.5" />
+            New
+          </Button>
+        ) : null}
+      </div>
+
+      <ul className="min-h-0 flex-1 overflow-y-auto">
+        {threads.length === 0 ? (
+          <li>
+            <EmptyState
+              title="No conversations yet"
+              description={
+                projectId
+                  ? "Start a thread to discuss progress, approvals or questions."
+                  : "Open a project to start a conversation."
+              }
+              action={
+                projectId ? (
+                  <Button variant="primary" size="sm" onClick={() => setComposing(true)}>
+                    <MessageSquarePlus className="size-4" />
+                    Start a conversation
+                  </Button>
+                ) : undefined
+              }
+            />
+          </li>
+        ) : (
+          threads.map((thread) => (
+            <li
+              key={thread.id}
+              className="border-b last:border-0"
+              style={{ borderColor: "var(--line-soft)" }}
+            >
+              <div
+                className={cn(
+                  "group relative transition-colors",
+                  thread.id === activeId
+                    ? "bg-[var(--accent-soft)]"
+                    : "hover:bg-[var(--surface-hover)]",
+                )}
+              >
+                <Link
+                  href={`${basePath}?thread=${thread.id}`}
+                  className="block px-4 py-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      {thread.lastAuthor ? (
+                        <Avatar
+                          name={thread.lastAuthor}
+                          color={thread.lastAuthorColor}
+                          size="sm"
+                        />
+                      ) : (
+                        <span className="surface-sunken size-7 shrink-0 rounded-full" />
+                      )}
+                      <div className="min-w-0">
+                        <p
+                          className={cn(
+                            "truncate text-[13px] leading-4",
+                            thread.unread > 0
+                              ? "text-strong font-semibold"
+                              : "text-body font-medium",
+                          )}
+                        >
+                          {thread.subject}
+                        </p>
+                        {showProjectName && thread.projectName ? (
+                          <p className="text-faint truncate text-[11px]">
+                            {thread.projectName}
+                          </p>
+                        ) : null}
+                        {thread.lastMessage ? (
+                          <p className="text-muted mt-0.5 truncate text-[11.5px]">
+                            {thread.lastAuthor ? `${thread.lastAuthor}: ` : ""}
+                            {truncate(thread.lastMessage.replace(/\s+/g, " "), 54)}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-faint text-[10.5px] whitespace-nowrap">
+                        {relativeTime(thread.lastMessageAt)}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {thread.isInternal ? (
+                          <span title="Internal only — not visible to the client">
+                            <Lock className="text-faint size-3" />
+                          </span>
+                        ) : null}
+                        {thread.status === "RESOLVED" ? (
+                          <CheckCircle2 className="size-3 text-[var(--color-mint-600)]" />
+                        ) : null}
+                        {thread.unread > 0 ? (
+                          <span className="tnum grid h-4 min-w-4 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">
+                            {thread.unread}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+
+                {canDelete ? (
+                  <div className="absolute top-2 right-2 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                    <form
+                      action={(fd) => {
+                        startTransition(() => {
+                          void toggleThreadStatusAction(fd);
+                        });
+                      }}
+                    >
+                      <input type="hidden" name="threadId" value={thread.id} />
+                      <button
+                        type="submit"
+                        title={
+                          thread.status === "OPEN"
+                            ? "Mark resolved"
+                            : "Reopen conversation"
+                        }
+                        className="text-faint hover:text-strong surface-raised rounded-md p-1 shadow-[var(--elev-1)]"
+                      >
+                        <CheckCircle2 className="size-3" />
+                      </button>
+                    </form>
+                    <button
+                      onClick={() => setDeleting(thread)}
+                      title="Delete conversation"
+                      className="text-faint hover:text-[var(--color-rose-600)] surface-raised rounded-md p-1 shadow-[var(--elev-1)]"
+                    >
+                      <Trash2 className="size-3" />
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </li>
+          ))
+        )}
+      </ul>
+
+      {projectId ? (
+        <NewThreadDialog
+          open={composing}
+          onClose={() => setComposing(false)}
+          projectId={projectId}
+          canStartInternal={canStartInternal}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title="Delete this conversation?"
+        description={
+          deleting
+            ? `“${deleting.subject}” and all ${deleting.messageCount} message${deleting.messageCount === 1 ? "" : "s"} will be permanently removed.`
+            : null
+        }
+        confirmLabel="Delete conversation"
+        onConfirm={() => {
+          if (!deleting) return;
+          const fd = new FormData();
+          fd.set("threadId", deleting.id);
+          startTransition(async () => {
+            await deleteThreadAction(fd);
+            setDeleting(null);
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+function NewThreadDialog({
+  open,
+  onClose,
+  projectId,
+  canStartInternal,
+}: {
+  open: boolean;
+  onClose: () => void;
+  projectId: string;
+  canStartInternal: boolean;
+}) {
+  const [state, action, pending] = useActionState(createThreadAction, idle);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (state.ok) {
+      toast.success(state.message ?? "Conversation started.");
+      onClose();
+    } else if (state.message && !state.errors) {
+      toast.error(state.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      dismissOnBackdrop={false}
+      title="Start a conversation"
+      description="Everyone on the project sees this thread unless you mark it internal."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={pending}>
+            Cancel
+          </Button>
+          <Button type="submit" form="thread-form" variant="primary" loading={pending}>
+            Send
+          </Button>
+        </>
+      }
+    >
+      <form id="thread-form" action={action} className="space-y-4 pb-2">
+        <input type="hidden" name="projectId" value={projectId} />
+        <Input
+          label="Subject"
+          name="subject"
+          required
+          placeholder="July progress and next month's plan"
+          defaultValue=""
+          error={state.errors?.subject}
+          data-autofocus
+        />
+        <Textarea
+          label="Message"
+          name="body"
+          rows={5}
+          required
+          placeholder="Write your first message…"
+          error={state.errors?.body}
+        />
+        {canStartInternal ? (
+          <Checkbox
+            label="Internal thread"
+            description="Only the agency team can see internal threads — the client never does."
+            name="isInternal"
+          />
+        ) : null}
+      </form>
+    </Dialog>
+  );
+}
+
+export function ThreadPlaceholder() {
+  return (
+    <div className="panel grid h-[calc(100dvh-19rem)] min-h-[420px] place-items-center">
+      <EmptyState
+        title="Pick a conversation"
+        description="Select a thread on the left to read it, or start a new one."
+      />
+    </div>
+  );
+}
