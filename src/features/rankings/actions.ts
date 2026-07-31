@@ -14,7 +14,7 @@ import {
 } from "@/lib/action";
 import { requireStaff } from "@/lib/auth";
 import { invalidate } from "@/lib/cache";
-import { monthKey, positionToPage, toNumber } from "@/lib/utils";
+import { monthKey, monthLabel, positionToPage, toNumber } from "@/lib/utils";
 
 function revalidate(projectId: string) {
   revalidatePath(`/app/projects/${projectId}/rankings`);
@@ -46,6 +46,23 @@ export async function saveMonthRankingsAction(
   }
   const month = monthKey(monthInput.length === 7 ? `${monthInput}-01` : monthInput);
   if (!month) return fail("Pick the month these positions belong to.");
+
+  /*
+   * The month comes from the page; the check date is typed. Left unchecked,
+   * a June grid could be stamped "checked 15 August" — the row files under
+   * June while every screen that shows the stamp says August. The picker is
+   * bounded too, but that is only a hint: nothing stops a crafted post.
+   */
+  if (checkedOn) {
+    if (monthKey(checkedOn) !== month) {
+      return fail(
+        `The check date must fall inside ${monthLabel(month)}. Switch month, or correct the date.`,
+      );
+    }
+    if (checkedOn > new Date().toISOString().slice(0, 10)) {
+      return fail("The check date cannot be in the future.");
+    }
+  }
 
   const upserts: {
     projectId: string;

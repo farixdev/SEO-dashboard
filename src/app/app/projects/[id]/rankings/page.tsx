@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getPageOptions } from "@/db/queries/keywords";
 import {
+  getMissingRankMonths,
   getMonthEntryRows,
   getMonthSummary,
   getRankMatrix,
@@ -23,7 +24,12 @@ import { MonthEntryGrid } from "@/features/rankings/month-entry";
 import { RankMatrix } from "@/features/rankings/rank-matrix";
 import { requireProjectAccess } from "@/lib/auth";
 import { type RawSearchParams, parseListQuery, totalPages } from "@/lib/query";
-import { currentMonthKey, formatNumber, monthLabel } from "@/lib/utils";
+import {
+  addMonths,
+  currentMonthKey,
+  formatNumber,
+  monthLabel,
+} from "@/lib/utils";
 
 import { MonthPicker } from "../month-picker";
 
@@ -49,19 +55,52 @@ export default async function RankingsPage({
     ? [...recordedMonths].reverse()
     : [currentMonthKey()];
 
-  // Entry mode can target a month that has no data yet.
-  const pickerMonths = monthOptions.includes(currentMonthKey())
-    ? monthOptions
-    : [currentMonthKey(), ...monthOptions];
-
+  /*
+   * Entry mode has to reach a month that has no data yet — that is the whole
+   * point of it. Offering only the months that already have rankings (plus the
+   * current one) made a skipped month unreachable: forget May, and by July
+   * there is no way back to it.
+   *
+   * Worse, an unrecognised `?month=` was silently swapped for a different
+   * month, so a link to May could quietly hand you July's grid — and a month
+   * of positions typed into it would be filed under the wrong month with no
+   * warning. Entry mode now accepts any real month up to the current one.
+   */
   const monthParam = one("month");
+  const isValidMonthKey = (value: string | undefined): value is string =>
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-01$/.test(value) &&
+    value <= currentMonthKey() &&
+    value >= "2015-01-01";
+
+  const recentMonths =
+    mode === "entry"
+      ? Array.from({ length: 24 }, (_, i) => addMonths(currentMonthKey(), -i))
+      : [];
+
+  const pickerMonths = [
+    ...new Set([
+      ...(mode === "entry" ? recentMonths : []),
+      ...(monthOptions.includes(currentMonthKey()) ? [] : [currentMonthKey()]),
+      ...monthOptions,
+      // A valid month asked for explicitly is always offered, so a deep link
+      // to an old month works rather than silently landing somewhere else.
+      ...(isValidMonthKey(monthParam) ? [monthParam] : []),
+    ]),
+  ].sort((a, b) => b.localeCompare(a));
+
   const month =
     monthParam && pickerMonths.includes(monthParam)
       ? monthParam
-      : (pickerMonths[0] ?? currentMonthKey());
+      : (monthOptions[0] ?? currentMonthKey());
 
   const summary = await getMonthSummary(id, month);
   const basePath = `/app/projects/${id}/rankings`;
+
+  // Surfaced rather than left to be noticed: a skipped month is invisible in
+  // the charts, which simply join the two months either side of it.
+  const missingMonths =
+    user.role !== "CLIENT" ? await getMissingRankMonths(id) : [];
 
   if (mode === "entry") {
     const rows = await getMonthEntryRows(id, month);
@@ -116,6 +155,42 @@ export default async function RankingsPage({
   return (
     <>
       <ModeSwitch mode="matrix" basePath={basePath} month={month} canEdit={user.role !== "CLIENT"} />
+
+      {missingMonths.length ? (
+        <div
+          className="panel mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3"
+          style={{
+            borderColor: "color-mix(in oklab, var(--color-amber-500) 40%, transparent)",
+            background: "color-mix(in oklab, var(--color-amber-500) 8%, transparent)",
+          }}
+        >
+          <span className="text-[13px] font-semibold text-[var(--color-amber-700)] dark:text-[var(--color-amber-500)]">
+            {missingMonths.length === 1
+              ? "One month has no positions recorded"
+              : `${missingMonths.length} months have no positions recorded`}
+          </span>
+          <span className="text-muted text-[12.5px]">
+            The trend charts join straight over a gap, so it does not show.
+          </span>
+          <span className="flex flex-wrap gap-1.5">
+            {missingMonths.slice(0, 6).map((m) => (
+              <Link
+                key={m}
+                href={`${basePath}?mode=entry&month=${m}`}
+                className="surface-raised text-strong rounded-lg border px-2 py-1 text-[12px] font-medium transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                style={{ borderColor: "var(--line-strong)" }}
+              >
+                Record {monthLabel(m)}
+              </Link>
+            ))}
+            {missingMonths.length > 6 ? (
+              <span className="text-faint self-center text-[12px]">
+                +{missingMonths.length - 6} more
+              </span>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <MiniStat

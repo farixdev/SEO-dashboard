@@ -59,6 +59,22 @@ export function MonthEntryGrid({
   );
   const [filter, setFilter] = useState("");
 
+  /*
+   * Bounds for the check date. `month` is always the 1st, so the last day is
+   * the day before the 1st of the next month. The default is today when today
+   * falls inside this month — the usual case, entering the month you are in —
+   * and otherwise the last day of it, which is what "we checked this month"
+   * means for a month already past.
+   */
+  const monthStart = month.slice(0, 10);
+  const lastDay = new Date(
+    Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0),
+  );
+  const monthEnd = lastDay.toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultCheckedOn =
+    today >= monthStart && today <= monthEnd ? today : monthEnd;
+
   useEffect(() => {
     if (state.ok && state.message) toast.success(state.message);
     else if (!state.ok && state.message) toast.error(state.message);
@@ -99,7 +115,15 @@ export function MonthEntryGrid({
             <input
               type="date"
               name="checkedOn"
-              defaultValue={checkedOn ?? ""}
+              /*
+               * The month is fixed by the page you are on, so a check date
+               * from a different month files the row under one month and
+               * stamps it with another. The picker is bounded to this month;
+               * the action re-checks, because a bound is a hint, not a rule.
+               */
+              min={monthStart}
+              max={monthEnd}
+              defaultValue={checkedOn ?? defaultCheckedOn}
               className="surface-sunken text-strong h-9 rounded-xl px-3 text-[13px] shadow-[var(--inset-well)] focus:outline-none"
             />
           </label>

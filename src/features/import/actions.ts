@@ -651,6 +651,7 @@ async function importRankings(
   const values: (typeof rankings.$inferInsert)[] = [];
   let skipped = 0;
   let unknownKeywords = 0;
+  let outOfMonthDates = 0;
 
   for (const row of rows) {
     const keyword = cleanText(pick(row, "keywords", "keyword", "query"));
@@ -680,14 +681,35 @@ async function importRankings(
       continue;
     }
 
+    /*
+     * A row's check date has to sit inside the month that row is filed under —
+     * whichever way that month was decided, the picker or the row's own column.
+     * Otherwise the position lands in one month carrying a stamp from another,
+     * and every screen that shows "checked on …" contradicts the month it is
+     * under. The position still imports; only the contradictory date is
+     * dropped, and the count is reported rather than swallowed.
+     */
+    const rowDate = toDateString(pick(row, "date", "checked on"));
+    let checkedOn: string | null = rowDate;
+    if (rowDate && monthKey(rowDate) !== month) {
+      checkedOn = null;
+      outOfMonthDates++;
+    }
+
     values.push({
       projectId,
       keywordId,
       month,
-      checkedOn: toDateString(pick(row, "date", "checked on")),
+      checkedOn,
       position,
       page: toNumber(pick(row, "page")) ?? positionToPage(position) ?? 1,
     });
+  }
+
+  if (outOfMonthDates) {
+    warnings.push(
+      `${outOfMonthDates} row${outOfMonthDates === 1 ? "" : "s"} had a check date outside the month the row belongs to. The positions were imported; those dates were not.`,
+    );
   }
 
   if (unknownKeywords) {
