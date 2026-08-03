@@ -6,6 +6,7 @@ import {
   KeyRound,
   LogOut,
   Menu,
+  Plus,
   Settings,
   X,
 } from "lucide-react";
@@ -358,11 +359,24 @@ export function ProjectSwitcher({
       <DropdownLabel>Projects</DropdownLabel>
       <DropdownLink href="/app">All projects</DropdownLink>
       <DropdownSeparator />
-      {projects.map((p) => (
-        <DropdownLink key={p.id} href={`/app/projects/${p.id}`}>
-          {p.name}
-        </DropdownLink>
-      ))}
+      {projects.length ? (
+        projects.map((p) => (
+          <DropdownLink key={p.id} href={`/app/projects/${p.id}`}>
+            {p.name}
+          </DropdownLink>
+        ))
+      ) : (
+        <p className="text-faint px-2.5 py-2 text-[12.5px]">No projects yet.</p>
+      )}
+      {/*
+        Same destination as the button on the dashboard. Starting a project is
+        the one thing you might want from anywhere, and previously it meant
+        navigating back to the project list first.
+      */}
+      <DropdownSeparator />
+      <DropdownLink href="/app/projects/new" icon={<Plus className="size-4" />}>
+        New project
+      </DropdownLink>
     </Dropdown>
   );
 }
