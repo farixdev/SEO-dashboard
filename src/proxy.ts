@@ -68,6 +68,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/app", request.url));
   }
 
+  /*
+   * Admin-only areas, turned away at the edge.
+   *
+   * `requireAdmin()` on the page already stops the data being fetched — a
+   * specialist asking for /app/team gets no account rows. But Next renders
+   * layouts and pages in parallel, so a redirect thrown inside a page cannot
+   * become a 307; the response is a 200 carrying a client-side redirect, and
+   * the browser navigates a moment later. Correct, but it reads like the page
+   * half-loaded. Deciding here makes it an honest 307, and the page guard
+   * stays as the authority.
+   */
+  if (pathname.startsWith("/app/team") && session.role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/app", request.url));
+  }
+
   return NextResponse.next();
 }
 

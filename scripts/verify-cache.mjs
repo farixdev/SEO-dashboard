@@ -90,9 +90,14 @@ const timed = async (url, cookie) => {
 };
 
 const cold = await timed(onPage, adminCookie);
-const warm = await timed(onPage, adminCookie);
+// Best of two warm loads. A single sample flakes: the first request after a
+// server start pays JIT and connection setup that has nothing to do with the
+// cache, and one slow network round trip can invert a real improvement.
+const w1 = await timed(onPage, adminCookie);
+const w2 = await timed(onPage, adminCookie);
+const warmMs = Math.min(w1.ms, w2.ms);
 check(!cold.body.includes(MARK), "probe row is not there yet");
-check(warm.ms < cold.ms, "second load is served from cache", `${cold.ms}ms -> ${warm.ms}ms`);
+check(warmMs < cold.ms * 0.9, "second load is served from cache", `${cold.ms}ms -> ${warmMs}ms`);
 
 const importForm = hiddenFields(
   await (await fetch(`${BASE}/app/projects/${project.id}/import`, { headers: { cookie: adminCookie } })).text(),
