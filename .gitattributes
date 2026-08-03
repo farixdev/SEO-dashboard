@@ -1,6 +1,12 @@
-# Git guesses text vs binary, and it guessed wrong on the manual: it warned
-# that LF would become CRLF "next time Git touches it", which for a PDF means
-# a checkout on a fresh clone produces a corrupt file. Say so explicitly.
+# Normalise text to LF in the repository, whatever the checkout does locally —
+# this project is developed on Windows and deployed on Linux.
+#
+# Order matters: later rules override earlier ones, so this catch-all has to
+# come first. With it last it silently re-marked the PDF as text, and a fresh
+# clone produced a file with a broken xref table.
+* text=auto
+
+# Binary, and Git must not touch the line endings.
 *.pdf   binary
 *.png   binary
 *.jpg   binary
@@ -11,7 +17,3 @@
 *.woff  binary
 *.woff2 binary
 *.xlsx  binary
-
-# Normalise everything else to LF in the repository, whatever the checkout
-# does locally — this project is developed on Windows and deployed on Linux.
-* text=auto
