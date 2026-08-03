@@ -15,8 +15,13 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
    click, which is the right default anyway: it invalidates the old one.
    ════════════════════════════════════════════════════════════════ */
 
-/** How long an unused invite stays valid. */
-export const INVITE_TTL_DAYS = 7;
+export {
+  INVITE_DURATIONS,
+  INVITE_TTL_DAYS,
+  type InviteDurationDays,
+  inviteExpiry,
+  parseInviteDuration,
+} from "./invite-durations";
 
 /** 32 random bytes, URL-safe. Long enough that guessing is not a concern. */
 export function generateInviteToken(): string {
@@ -41,10 +46,6 @@ export function inviteTokenMatches(token: string, storedHash: string): boolean {
   }
   if (candidate.length !== stored.length) return false;
   return timingSafeEqual(candidate, stored);
-}
-
-export function inviteExpiry(from = new Date()): Date {
-  return new Date(from.getTime() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
 }
 
 /**
@@ -80,7 +81,13 @@ export function checkInvite(row: {
 }): InviteState {
   if (!row.isActive) return { valid: false, reason: "inactive" };
   if (row.inviteAcceptedAt) return { valid: false, reason: "used" };
-  if (!row.inviteExpiresAt || row.inviteExpiresAt.getTime() < Date.now()) {
+  /*
+   * A null expiry means "never expires", not "expired". The caller only ever
+   * reaches here having matched a live token hash, and an accepted or revoked
+   * invite is already handled above — so a hash with no expiry can only be one
+   * that was deliberately issued without a deadline.
+   */
+  if (row.inviteExpiresAt && row.inviteExpiresAt.getTime() < Date.now()) {
     return { valid: false, reason: "expired" };
   }
   return { valid: true };

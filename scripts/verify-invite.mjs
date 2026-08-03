@@ -181,6 +181,35 @@ const setPw = await fetch(`${BASE}/set-password`, {
 });
 check(setPw.status === 200, "set-password screen is reachable", `status ${setPw.status}`);
 
+
+/* ── 10. the issuer chooses how long the link lives ── */
+{
+  const { createHash, randomBytes } = await import("node:crypto");
+  const reissue = async (expiresAt) => {
+    const t = randomBytes(32).toString("base64url");
+    await sql`update users set invite_token_hash=${createHash("sha256").update(t).digest("hex")},
+      invite_expires_at=${expiresAt}, invite_accepted_at=null where id=${client.id}`;
+    return t;
+  };
+  const read = async (t) =>
+    (await (await fetch(`${BASE}/invite/${t}`)).text()).replace(/<[^>]+>/g, " ");
+
+  check(!/expired/i.test(await read(await reissue(null))),
+    "a never-expiring link opens");
+  check(!/expired/i.test(await read(await reissue(new Date(Date.now() + 180 * 86400000)))),
+    "a 6-month link opens");
+  check(/expired/i.test(await read(await reissue(new Date(Date.now() - 1000)))),
+    "a lapsed link is still refused");
+
+  // The nightly sweep must not treat "never" as "long overdue".
+  await reissue(null);
+  await fetch(`${BASE}/api/cron/sweep-invites`, {
+    method: "POST", headers: { authorization: `Bearer ${env.CRON_SECRET}` },
+  });
+  const [kept] = await sql`select invite_token_hash from users where id=${client.id}`;
+  check(kept.invite_token_hash !== null, "the sweep leaves a never-expiring invite alone");
+}
+
 /* ── clean up ── */
 await sql`delete from users where id=${client.id}`;
 console.log("-".repeat(74));

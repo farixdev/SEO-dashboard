@@ -186,9 +186,10 @@ export const HELP = {
   invites: {
     title: "Invite links",
     what: "A one-time link that lets someone set their own password and sign straight in.",
-    affects: "Issuing a new link invalidates the previous one.",
+    affects:
+      "Issuing a new link invalidates the previous one. You choose how long it stays valid — 24 hours through 6 months, or never.",
     automatic:
-      "Valid for 7 days, works once, and stored only as a hash — so it cannot be recovered from the database or reused if forwarded.",
+      "Works once, and stored only as a hash — so it cannot be recovered from the database or reused if forwarded. Links with a deadline are swept away nightly once they lapse; a link set to never expire is left alone.",
   },
 
   /* ── Dashboard ───────────────────────────────────────────────── */

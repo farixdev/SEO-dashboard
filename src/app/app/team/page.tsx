@@ -36,8 +36,9 @@ export default async function TeamAdminPage() {
         // one that issued the expiry in the first place.
         hasPendingInvite: sql<boolean>`(
           ${users.inviteTokenHash} is not null
-          and ${users.inviteExpiresAt} > now()
           and ${users.inviteAcceptedAt} is null
+          -- a null expiry is "never expires", not "already lapsed"
+          and (${users.inviteExpiresAt} is null or ${users.inviteExpiresAt} > now())
         )`,
         inviteExpiresAt: users.inviteExpiresAt,
       })

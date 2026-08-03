@@ -9,11 +9,12 @@ import { CopyButton } from "@/components/ui/copy";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { idle } from "@/lib/action-state";
+import { INVITE_DURATIONS, INVITE_TTL_DAYS } from "@/lib/invite-durations";
 import { formatDate } from "@/lib/utils";
 
 import { createInviteAction, revokeInviteAction } from "./actions";
 
-type Created = { url: string; email: string; expiresAt: string };
+type Created = { url: string; email: string; expiresAt: string | null };
 
 /**
  * Generates a one-time invite link and shows it once. The admin copies it and
@@ -133,7 +134,10 @@ function InviteDialog({
                 <CopyButton size="md" value={created.url} label="Copy invite link" />
               </div>
               <p className="text-faint mt-2 text-[11.5px]">
-                Works once · expires {formatDate(created.expiresAt)}
+                Works once ·{" "}
+                {created.expiresAt
+                  ? `expires ${formatDate(created.expiresAt)}`
+                  : "does not expire"}
               </p>
             </div>
 
@@ -172,6 +176,27 @@ function InviteDialog({
                 </div>
               </dl>
             </div>
+
+            <label className="block">
+              <span className="text-muted mb-1.5 block text-[12.5px] font-medium">
+                Link stays valid for
+              </span>
+              <select
+                name="expiresInDays"
+                defaultValue={String(INVITE_TTL_DAYS)}
+                className="surface-sunken text-strong h-9 w-full rounded-xl px-3 text-[13px] shadow-[var(--inset-well)] focus:outline-none"
+              >
+                {INVITE_DURATIONS.map((d) => (
+                  <option key={String(d.days)} value={d.days === null ? "never" : d.days}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+              <span className="text-faint mt-1.5 block text-[11.5px] leading-4">
+                A link that never expires stays usable by anyone who sees it, so
+                prefer a deadline unless the client is slow to get started.
+              </span>
+            </label>
 
             {hasPendingInvite ? (
               <div className="flex items-start gap-2.5 rounded-xl bg-[color-mix(in_oklab,var(--color-amber-500)_14%,transparent)] px-3.5 py-3">

@@ -17,11 +17,11 @@ import {
 import { hashPassword, refreshSession, requireStaff } from "@/lib/auth";
 import { invalidateUsers } from "@/lib/cache";
 import {
-  INVITE_TTL_DAYS,
   checkInvite,
   generateInviteToken,
   hashInviteToken,
   inviteExpiry,
+  parseInviteDuration,
   inviteTokenMatches,
   inviteUrl,
 } from "@/lib/invite";
@@ -67,7 +67,7 @@ async function canManageAccount(
 export async function createInviteAction(
   _prev: ActionState,
   formData: FormData,
-): Promise<ActionState<{ url: string; email: string; expiresAt: string }>> {
+): Promise<ActionState<{ url: string; email: string; expiresAt: string | null }>> {
   const staff = await requireStaff();
   const userId = String(formData.get("userId") ?? "");
   if (!userId) return fail("Pick an account first.");
@@ -99,7 +99,9 @@ export async function createInviteAction(
     }
 
     const token = generateInviteToken();
-    const expiresAt = inviteExpiry();
+    // Whoever issues the link chooses how long it lives; the value is parsed
+    // against the allowed set rather than trusted off the form.
+    const expiresAt = inviteExpiry(parseInviteDuration(formData.get("expiresInDays")));
 
     await db
       .update(users)
@@ -120,17 +122,24 @@ export async function createInviteAction(
       action: "created",
       entity: "invite",
       entityId: userId,
-      summary: `Created an invite link for ${target.email}`,
+      summary: `Created an invite link for ${target.email} (${
+        expiresAt ? `expires ${expiresAt.toISOString().slice(0, 10)}` : "never expires"
+      })`,
     });
 
     invalidateUsers();
     revalidatePath("/app/team");
 
-    return ok(`Invite link ready — valid for ${INVITE_TTL_DAYS} days.`, {
-      url: inviteUrl(token),
-      email: target.email,
-      expiresAt: expiresAt.toISOString(),
-    });
+    return ok(
+      expiresAt
+        ? "Invite link ready."
+        : "Invite link ready — it will not expire.",
+      {
+        url: inviteUrl(token),
+        email: target.email,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      },
+    );
   } catch (error) {
     return fail(describeError(error));
   }
