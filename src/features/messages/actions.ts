@@ -1,12 +1,18 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
 import { getThread, markThreadRead } from "@/db/queries/messages";
 import { logActivity } from "@/db/queries/projects";
-import { messages, threads } from "@/db/schema";
+import {
+  messages,
+  projectMembers,
+  threadParticipants,
+  threads,
+  users,
+} from "@/db/schema";
 import {
   type ActionState,
   describeError,
@@ -58,6 +64,38 @@ export async function createThreadAction(
       })
       .returning({ id: threads.id });
 
+    /*
+     * Naming people turns a project-wide thread into a private one. Each id is
+     * checked against the project's own membership first — the picker only
+     * offers members, but the picker is not the boundary.
+     *
+     * A client can never be pulled into an internal thread, and a client
+     * composing can only ever address staff on their own project.
+     */
+    if (input.participantIds.length) {
+      const allowed = await db
+        .select({ userId: projectMembers.userId, role: users.role })
+        .from(projectMembers)
+        .innerJoin(users, eq(users.id, projectMembers.userId))
+        .where(
+          and(
+            eq(projectMembers.projectId, input.projectId),
+            inArray(projectMembers.userId, input.participantIds),
+          ),
+        );
+
+      const recipients = allowed
+        .filter((a) => !(isInternal && a.role === "CLIENT"))
+        .map((a) => a.userId);
+
+      // The author is always a participant, or they lose their own thread.
+      const everyone = [...new Set([user.id, ...recipients])];
+      await db
+        .insert(threadParticipants)
+        .values(everyone.map((userId) => ({ threadId: thread.id, userId })))
+        .onConflictDoNothing();
+    }
+
     await db.insert(messages).values({
       threadId: thread.id,
       authorId: user.id,
@@ -92,7 +130,7 @@ export async function sendMessageAction(
   if (!parsed.success) return fail("Write a message first.", parsed.errors);
 
   try {
-    const thread = await getThread(parsed.data.threadId);
+    const thread = await getThread(parsed.data.threadId, user.id);
     if (!thread || !user.projectIds.includes(thread.projectId)) {
       return fail("That conversation is not available.");
     }
@@ -125,7 +163,7 @@ export async function markThreadReadAction(formData: FormData): Promise<void> {
   const threadId = String(formData.get("threadId") ?? "");
   if (!threadId) return;
 
-  const thread = await getThread(threadId);
+  const thread = await getThread(threadId, user.id);
   if (!thread || !user.projectIds.includes(thread.projectId)) return;
 
   await markThreadRead(threadId, user.id);
@@ -138,7 +176,7 @@ export async function toggleThreadStatusAction(formData: FormData): Promise<void
   const threadId = String(formData.get("threadId") ?? "");
   if (!threadId) return;
 
-  const thread = await getThread(threadId);
+  const thread = await getThread(threadId, user.id);
   if (!thread || !user.projectIds.includes(thread.projectId)) return;
 
   await db
@@ -159,7 +197,7 @@ export async function deleteThreadAction(formData: FormData): Promise<void> {
   const threadId = String(formData.get("threadId") ?? "");
   if (!threadId) return;
 
-  const thread = await getThread(threadId);
+  const thread = await getThread(threadId, user.id);
   if (!thread || !user.projectIds.includes(thread.projectId)) return;
 
   await db.delete(threads).where(eq(threads.id, threadId));

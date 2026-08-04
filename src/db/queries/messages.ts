@@ -3,7 +3,37 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { messages, projects, threadReads, threads, users } from "@/db/schema";
+import {
+  messages,
+  projects,
+  threadParticipants,
+  threadReads,
+  threads,
+  users,
+} from "@/db/schema";
+
+/**
+ * The single rule for "may this person see this conversation".
+ *
+ * A thread with no participant rows is project-wide, exactly as before. Once
+ * anyone is named, only they and whoever started it may see it.
+ *
+ * Written once and reused by every read path — the list, the single thread,
+ * the unread count and the polling endpoint. Splitting this rule across four
+ * queries is how a private thread ends up visible in one of them.
+ */
+export function visibleToUser(userId: string) {
+  return sql`(
+    not exists (
+      select 1 from ${threadParticipants} tp where tp.thread_id = ${threads.id}
+    )
+    or ${threads.createdById} = ${userId}
+    or exists (
+      select 1 from ${threadParticipants} tp
+      where tp.thread_id = ${threads.id} and tp.user_id = ${userId}
+    )
+  )`;
+}
 
 export type ThreadSummary = {
   id: string;
@@ -42,6 +72,7 @@ export async function listThreads(
   else if (projectIds?.length) clauses.push(inArray(threads.projectId, projectIds));
   else return [];
   if (!includeInternal) clauses.push(eq(threads.isInternal, false));
+  clauses.push(visibleToUser(userId));
   if (status) clauses.push(eq(threads.status, status));
 
   const rows = await db
@@ -116,7 +147,12 @@ export async function listThreads(
   }));
 }
 
-export async function getThread(threadId: string) {
+/**
+ * @param viewerId enforces the participant rule. Required rather than optional
+ *   so a new call site cannot quietly skip the check — this function is the
+ *   gate every message read passes through.
+ */
+export async function getThread(threadId: string, viewerId: string) {
   const [row] = await db
     .select({
       id: threads.id,
@@ -132,7 +168,7 @@ export async function getThread(threadId: string) {
     .from(threads)
     .leftJoin(projects, eq(projects.id, threads.projectId))
     .leftJoin(users, eq(users.id, threads.createdById))
-    .where(eq(threads.id, threadId))
+    .where(and(eq(threads.id, threadId), visibleToUser(viewerId)))
     .limit(1);
   return row ?? null;
 }

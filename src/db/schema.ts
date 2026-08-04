@@ -403,6 +403,34 @@ export const threadReads = pgTable(
   (t) => [primaryKey({ columns: [t.threadId, t.userId] })],
 );
 
+/**
+ * Who a conversation is addressed to.
+ *
+ * A thread with NO rows here behaves exactly as it always has: everyone on the
+ * project can see it, subject to `is_internal`. Adding rows narrows it to those
+ * people plus whoever started it — which is how an admin holds a private word
+ * with one specialist, or with the client alone.
+ *
+ * Deliberately additive: every existing thread has no participants, so nothing
+ * changes for them.
+ */
+export const threadParticipants = pgTable(
+  "thread_participants",
+  {
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => threads.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.threadId, t.userId] }),
+    index("thread_participants_user_idx").on(t.userId),
+  ],
+);
+
 /* ── Audit trail ───────────────────────────────────────────────── */
 
 export const activityLog = pgTable(
@@ -533,6 +561,17 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [threads.id],
   }),
   author: one(users, { fields: [messages.authorId], references: [users.id] }),
+}));
+
+export const threadParticipantsRelations = relations(threadParticipants, ({ one }) => ({
+  thread: one(threads, {
+    fields: [threadParticipants.threadId],
+    references: [threads.id],
+  }),
+  user: one(users, {
+    fields: [threadParticipants.userId],
+    references: [users.id],
+  }),
 }));
 
 export const threadReadsRelations = relations(threadReads, ({ one }) => ({

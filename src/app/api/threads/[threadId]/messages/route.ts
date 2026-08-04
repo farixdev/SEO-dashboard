@@ -15,7 +15,7 @@ export async function GET(
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const thread = await getThread(threadId);
+  const thread = await getThread(threadId, user.id);
   if (!thread || !user.projectIds.includes(thread.projectId)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

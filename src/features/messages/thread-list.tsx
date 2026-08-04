@@ -6,7 +6,7 @@ import { useActionState, useEffect, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
-import { Checkbox, Input, Textarea } from "@/components/ui/field";
+import { Checkbox, Input, Select, Textarea } from "@/components/ui/field";
 import { Avatar, EmptyState } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
 import { idle } from "@/lib/action-state";
@@ -33,6 +33,11 @@ export type ThreadListItem = {
   lastAuthorColor: string | null;
 };
 
+export type ThreadPerson = { id: string; name: string; isClient: boolean };
+
+/** A project the inbox can start a conversation in, and who is on it. */
+export type ThreadProject = { id: string; name: string; people: ThreadPerson[] };
+
 export function ThreadList({
   threads,
   activeId,
@@ -41,6 +46,8 @@ export function ThreadList({
   canStartInternal,
   showProjectName = false,
   canDelete,
+  people = [],
+  projects = [],
 }: {
   threads: ThreadListItem[];
   activeId?: string;
@@ -50,15 +57,26 @@ export function ThreadList({
    * cannot pass a function across the boundary to a Client Component.
    */
   basePath: string;
-  /** null on the cross-project inbox, where a project must be chosen first */
+  /** null on the cross-project inbox, where a project is chosen in the dialog */
   projectId: string | null;
   canStartInternal: boolean;
   showProjectName?: boolean;
+  /** Project members a new conversation can be addressed to. */
+  people?: ThreadPerson[];
+  /** Only for the cross-project inbox: which projects you may post into. */
+  projects?: ThreadProject[];
   canDelete: boolean;
 }) {
   const [composing, setComposing] = useState(false);
   const [deleting, setDeleting] = useState<ThreadListItem | null>(null);
   const [, startTransition] = useTransition();
+
+  /*
+   * The inbox used to have no way to start anything — you had to remember
+   * which project the person was on and navigate there first. Give it the
+   * same button, with the project chosen inside the dialog.
+   */
+  const canCompose = projectId !== null || projects.length > 0;
 
   return (
     <div className="panel flex max-h-[calc(100dvh-19rem)] min-h-[420px] flex-col overflow-hidden">
@@ -67,7 +85,7 @@ export function ThreadList({
         style={{ borderColor: "var(--line-soft)" }}
       >
         <h2 className="text-strong text-[13.5px] font-semibold">Conversations</h2>
-        {projectId ? (
+        {canCompose ? (
           <Button variant="secondary" size="sm" onClick={() => setComposing(true)}>
             <MessageSquarePlus className="size-3.5" />
             New
@@ -81,12 +99,12 @@ export function ThreadList({
             <EmptyState
               title="No conversations yet"
               description={
-                projectId
+                canCompose
                   ? "Start a thread to discuss progress, approvals or questions."
                   : "Open a project to start a conversation."
               }
               action={
-                projectId ? (
+                canCompose ? (
                   <Button variant="primary" size="sm" onClick={() => setComposing(true)}>
                     <MessageSquarePlus className="size-4" />
                     Start a conversation
@@ -210,12 +228,14 @@ export function ThreadList({
         )}
       </ul>
 
-      {projectId ? (
+      {canCompose ? (
         <NewThreadDialog
           open={composing}
           onClose={() => setComposing(false)}
           projectId={projectId}
+          projects={projects}
           canStartInternal={canStartInternal}
+          people={people}
         />
       ) : null}
 
@@ -247,15 +267,24 @@ function NewThreadDialog({
   open,
   onClose,
   projectId,
+  projects,
   canStartInternal,
+  people,
 }: {
   open: boolean;
   onClose: () => void;
-  projectId: string;
+  /** null on the inbox: the project is picked in the dialog instead. */
+  projectId: string | null;
+  projects: ThreadProject[];
   canStartInternal: boolean;
+  /** Everyone on the project, so a conversation can be addressed to some of them. */
+  people: ThreadPerson[];
 }) {
   const [state, action, pending] = useActionState(createThreadAction, idle);
   const toast = useToast();
+  const [chosenProject, setChosenProject] = useState(
+    projectId ?? projects[0]?.id ?? "",
+  );
 
   useEffect(() => {
     if (state.ok) {
@@ -267,13 +296,22 @@ function NewThreadDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
+  /*
+   * On a project page the recipients are fixed. On the inbox they follow the
+   * dropdown, so switching project cannot leave a name ticked from the last
+   * one — the action would reject it anyway, but the list would lie.
+   */
+  const recipients = projectId
+    ? people
+    : (projects.find((p) => p.id === chosenProject)?.people ?? []);
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       dismissOnBackdrop={false}
       title="Start a conversation"
-      description="Everyone on the project sees this thread unless you mark it internal."
+      description="Everyone on the project sees this thread unless you name people or mark it internal."
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={pending}>
@@ -286,7 +324,24 @@ function NewThreadDialog({
       }
     >
       <form id="thread-form" action={action} className="space-y-4 pb-2">
-        <input type="hidden" name="projectId" value={projectId} />
+        {projectId ? (
+          <input type="hidden" name="projectId" value={projectId} />
+        ) : (
+          <Select
+            label="Project"
+            name="projectId"
+            required
+            value={chosenProject}
+            onChange={(e) => setChosenProject(e.target.value)}
+            error={state.errors?.projectId}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+        )}
         <Input
           label="Subject"
           name="subject"
@@ -304,10 +359,41 @@ function NewThreadDialog({
           placeholder="Write your first message…"
           error={state.errors?.body}
         />
+        {recipients.length ? (
+          <fieldset className="well p-3.5">
+            <legend className="text-muted px-1 text-[12.5px] font-medium">
+              Who is this for?
+            </legend>
+            <p className="text-faint mb-2.5 text-[11.5px] leading-4">
+              Leave everyone unticked to post it to the whole project. Tick names
+              to keep the conversation between you and them.
+            </p>
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {recipients.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-[13px] hover:bg-[var(--surface-hover)]"
+                >
+                  <input
+                    type="checkbox"
+                    name="participantIds"
+                    value={p.id}
+                    className="size-3.5 shrink-0 accent-[var(--accent)]"
+                  />
+                  <span className="text-body min-w-0 truncate">{p.name}</span>
+                  {p.isClient ? (
+                    <span className="text-faint shrink-0 text-[11px]">client</span>
+                  ) : null}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+
         {canStartInternal ? (
           <Checkbox
             label="Internal thread"
-            description="Only the agency team can see internal threads — the client never does."
+            description="Only the agency team can see internal threads — the client never does. A client ticked above is dropped from an internal thread."
             name="isInternal"
           />
         ) : null}

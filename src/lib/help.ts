@@ -166,10 +166,13 @@ export const HELP = {
 
   messages: {
     title: "Messages",
-    what: "Conversations with the client, plus internal threads only the agency can see.",
-    affects: "Internal threads are invisible to the client, even by direct link.",
+    what: "Conversations with the client, internal threads only the agency can see, and private ones between named people.",
+    source:
+      "Start one from any project, or from the Inbox — there you pick the project in the dialog.",
+    affects:
+      "Leave everyone unticked and the whole project sees it. Tick names and only those people and you can see it, from every screen and every notification. Internal threads are invisible to the client, even by direct link.",
     automatic:
-      "The unread badge updates on its own every few seconds, wherever you are in the app, and a new message raises a notification.",
+      "The unread badge updates on its own every few seconds, wherever you are in the app, and a new message raises a notification. A conversation you are not part of never raises yours.",
   },
 
   /* ── Access ──────────────────────────────────────────────────── */

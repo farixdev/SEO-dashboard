@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/ui/misc";
 import { getThread, listMessages, listThreads } from "@/db/queries/messages";
+import { getProjectMembers } from "@/db/queries/projects";
 import { MessageThread } from "@/features/messages/message-thread";
 import { ThreadList, ThreadPlaceholder } from "@/features/messages/thread-list";
 import { HELP } from "@/lib/help";
@@ -26,9 +27,12 @@ export default async function ProjectMessagesPage({
       ? threadParam
       : threads[0]?.id;
 
-  const [active, messages] = activeId
-    ? await Promise.all([getThread(activeId), listMessages(activeId)])
-    : [null, []];
+  const [[active, messages], members] = await Promise.all([
+    activeId
+      ? Promise.all([getThread(activeId, user.id), listMessages(activeId)])
+      : Promise.resolve([null, []] as const),
+    getProjectMembers(id),
+  ]);
 
   return (
     <>
@@ -40,6 +44,15 @@ export default async function ProjectMessagesPage({
 
       <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
         <ThreadList
+          // Everyone on the project, so a conversation can be addressed to
+          // one specialist, or to the client alone.
+          people={members
+            .filter((m) => m.isActive && m.userId !== user.id)
+            .map((m) => ({
+              id: m.userId,
+              name: m.name,
+              isClient: m.memberRole === "CLIENT_VIEWER",
+            }))}
           threads={threads.map((t) => ({
             ...t,
             lastMessageAt: t.lastMessageAt.toISOString(),

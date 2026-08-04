@@ -232,6 +232,74 @@ export const getProjectMembers = cachedQuery(
   CACHE_TTL.reference,
 );
 
+export type ComposeTarget = {
+  id: string;
+  name: string;
+  people: { id: string; name: string; isClient: boolean }[];
+};
+
+/**
+ * Every project the viewer is on, each with the people a new conversation
+ * could be addressed to — themselves excluded, since you are always in your
+ * own thread.
+ *
+ * One round trip for the whole inbox rather than one per project: the compose
+ * dialog needs the full set up front so switching project in the dropdown
+ * swaps the names without a server hop.
+ */
+async function uncachedGetComposeTargets(
+  projectIds: string[],
+  viewerId: string,
+): Promise<ComposeTarget[]> {
+  if (!projectIds.length) return [];
+
+  const rows = await db
+    .select({
+      projectId: projects.id,
+      projectName: projects.name,
+      userId: users.id,
+      name: users.name,
+      memberRole: projectMembers.role,
+    })
+    .from(projects)
+    .leftJoin(
+      projectMembers,
+      and(
+        eq(projectMembers.projectId, projects.id),
+        sql`${projectMembers.userId} <> ${viewerId}`,
+      ),
+    )
+    .leftJoin(users, and(eq(users.id, projectMembers.userId), eq(users.isActive, true)))
+    .where(inArray(projects.id, projectIds))
+    .orderBy(asc(projects.name), asc(users.name));
+
+  const byProject = new Map<string, ComposeTarget>();
+  for (const r of rows) {
+    let target = byProject.get(r.projectId);
+    if (!target) {
+      target = { id: r.projectId, name: r.projectName, people: [] };
+      byProject.set(r.projectId, target);
+    }
+    // The left joins keep a project with no other members in the list — you
+    // can still post to it, there is simply nobody to single out.
+    if (r.userId && r.name) {
+      target.people.push({
+        id: r.userId,
+        name: r.name,
+        isClient: r.memberRole === "CLIENT_VIEWER",
+      });
+    }
+  }
+  return [...byProject.values()];
+}
+
+export const getComposeTargets = cachedQuery(
+  "projects:compose-targets",
+  uncachedGetComposeTargets,
+  (projectIds) => [...projectIds.map((id) => tags.project(id)), tags.users()],
+  CACHE_TTL.reference,
+);
+
 /** Cross-project rollup for the agency home page. */
 async function uncachedGetAgencyOverview(
   projectIds: string[] | null,
@@ -437,6 +505,15 @@ export async function getUnreadCount(
       and(
         inArray(threads.projectId, projectIds),
         includeInternal ? undefined : eq(threads.isInternal, false),
+        // A conversation you are not part of must not raise your badge.
+        sql`(
+          not exists (select 1 from thread_participants tp where tp.thread_id = ${threads.id})
+          or ${threads.createdById} = ${userId}
+          or exists (
+            select 1 from thread_participants tp
+            where tp.thread_id = ${threads.id} and tp.user_id = ${userId}
+          )
+        )`,
         sql`exists (
           select 1 from messages m
           where m.thread_id = ${threads.id}

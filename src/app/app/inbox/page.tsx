@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/ui/misc";
 import { getThread, listMessages, listThreads } from "@/db/queries/messages";
+import { getComposeTargets } from "@/db/queries/projects";
 import { MessageThread } from "@/features/messages/message-thread";
 import { ThreadList, ThreadPlaceholder } from "@/features/messages/thread-list";
 import { HELP } from "@/lib/help";
@@ -17,10 +18,12 @@ export default async function InboxPage({
   const { thread: threadParam } = await searchParams;
   const user = await requireStaff();
 
-  const threads = await listThreads(user.id, {
-    projectIds: user.projectIds,
-    includeInternal: true,
-  });
+  const [threads, composeTargets] = await Promise.all([
+    listThreads(user.id, { projectIds: user.projectIds, includeInternal: true }),
+    // So a conversation can be started from here, with the project picked in
+    // the dialog rather than by navigating to it first.
+    getComposeTargets(user.projectIds, user.id),
+  ]);
 
   const activeId =
     threadParam && threads.some((t) => t.id === threadParam)
@@ -28,7 +31,7 @@ export default async function InboxPage({
       : threads[0]?.id;
 
   const [active, messages] = activeId
-    ? await Promise.all([getThread(activeId), listMessages(activeId)])
+    ? await Promise.all([getThread(activeId, user.id), listMessages(activeId)])
     : [null, []];
 
   const unread = threads.reduce((acc, t) => acc + t.unread, 0);
@@ -54,6 +57,7 @@ export default async function InboxPage({
           activeId={activeId}
           basePath="/app/inbox"
           projectId={null}
+          projects={composeTargets}
           canStartInternal
           showProjectName
           canDelete

@@ -28,7 +28,7 @@ export default async function PortalMessagesPage({
       : threads[0]?.id;
 
   const [active, messages] = activeId
-    ? await Promise.all([getThread(activeId), listMessages(activeId)])
+    ? await Promise.all([getThread(activeId, user.id), listMessages(activeId)])
     : [null, []];
 
   return (

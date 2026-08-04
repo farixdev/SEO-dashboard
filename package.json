@@ -26,6 +26,7 @@
     "db:sync": "tsx scripts/sync-backlinks.ts",
     "verify:cache": "node scripts/verify-cache.mjs",
     "verify:chat": "node scripts/verify-chat.mjs",
+    "verify:threads": "node scripts/verify-private-threads.mjs",
     "db:baseline": "tsx scripts/baseline-migrations.ts"
   },
   "dependencies": {

@@ -315,6 +315,16 @@ export const threadCreateSchema = z.object({
   subject: trimmed.min(2, "Add a subject").max(300),
   body: trimmed.min(1, "Write a message").max(8000),
   isInternal: checkbox,
+  /**
+   * Empty means the whole project, as before. Naming people narrows the
+   * conversation to them — the action still checks each id really belongs to
+   * the project, so a crafted post cannot pull in an outsider.
+   */
+  participantIds: z.preprocess(
+    // parseForm hands back a bare string when only one box is ticked.
+    (v) => (v === undefined || v === "" ? [] : Array.isArray(v) ? v : [v]),
+    z.array(uuid),
+  ),
 });
 
 export const messageCreateSchema = z.object({
