@@ -46,7 +46,8 @@ import { listThreads } from "@/db/queries/messages";
 import { listTasks } from "@/db/queries/tasks";
 import { requirePortalProject } from "@/lib/portal";
 import {
-  compactNumber,  formatNumber,
+  compactNumber,
+  formatNumber,
   formatPercent,
   monthLabel,
   monthLabelLong,
@@ -196,7 +197,7 @@ export default async function PortalOverviewPage({
       <Masthead
         eyebrow={`${monthLabelLong(month)} report`}
         title={project.clientCompany ?? project.name}
-        subtitle="Here is how your search visibility is progressing, and what your team has been working on."
+        subtitle="How easy you are to find on Google right now, and what your team has been doing about it."
         action={
           <>
             <MonthPicker months={months} current={month} basePath="/portal" />
@@ -230,7 +231,7 @@ export default async function PortalOverviewPage({
             icon={<Target className="size-3.5" />}
           />
           <HeroStat
-            label="Seen in search"
+            label="Times you appeared on Google"
             value={compactNumber(kpis.search.impressions)}
             delta={kpis.search.impressionsDelta}
             caption={`${formatNumber(kpis.search.clicks)} visits · ${formatPercent(kpis.search.ctr, 2)} click rate`}
@@ -238,7 +239,7 @@ export default async function PortalOverviewPage({
             icon={<Search className="size-3.5" />}
           />
           <HeroStat
-            label="New backlinks"
+            label="New sites linking to you"
             value={formatNumber(kpis.backlinks.thisMonth)}
             delta={kpis.backlinks.monthDelta}
             caption={`${formatNumber(kpis.backlinks.total)} earned in total`}
@@ -252,10 +253,10 @@ export default async function PortalOverviewPage({
       <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Verdict tone={verdictTone} headline={verdictHeadline} points={points} />
 
-        <Panel title="This month's targets" description="What we committed to deliver.">
+        <Panel title="This month's goals" description="What your team set out to do, and how far along it is.">
           <div className="space-y-5">
             <Milestone
-              label="Backlinks earned"
+              label="New links earned"
               actual={targets.backlinks.actual}
               target={targets.backlinks.target}
               unit="link"
@@ -279,7 +280,7 @@ export default async function PortalOverviewPage({
 
       {/* ── Visibility ── */}
       <Panel
-        title="Search visibility over time"
+        title="How often people see you on Google"
         description="How often your site appears in Google, and how many people click through."
         className="mb-6"
       >
@@ -294,7 +295,7 @@ export default async function PortalOverviewPage({
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <Panel
-          title="Where your keywords rank"
+          title="How high you appear in results"
           description={`Distribution across Google's result pages in ${monthLabel(month)}.`}
         >
           <RankSpread bands={spread} />
@@ -327,7 +328,7 @@ export default async function PortalOverviewPage({
         </Panel>
 
         <Panel
-          title="Your backlink profile"
+          title="Where your links come from"
           description="The mix of placements earned for your site."
         >
           {linksByType.length ? (
@@ -394,7 +395,7 @@ export default async function PortalOverviewPage({
       {/* ── Talk to us ── */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <Panel
-          title="Talk to your team"
+          title="Message your team"
           description="Questions, feedback, or a change you'd like made."
         >
           {threads.length ? (

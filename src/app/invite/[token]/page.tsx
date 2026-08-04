@@ -11,11 +11,19 @@ import { checkInvite, hashInviteToken, inviteTokenMatches } from "@/lib/invite";
 
 export const metadata: Metadata = { title: "Set up your access" };
 
+/*
+ * Written for the person receiving it, not for the agency.
+ *
+ * "Keyword ranks", "backlinks" and "impressions" are words the team uses
+ * daily and the client mostly does not — a business owner opening this for
+ * the first time should not have to decode anything. Each line says what
+ * they will actually be able to see, in the words they would use themselves.
+ */
 const HIGHLIGHTS = [
-  { icon: TrendingUp, text: "Where every keyword ranks, month by month" },
-  { icon: Link2, text: "Every backlink earned for your site" },
-  { icon: BarChart3, text: "Clicks and impressions from Google" },
-  { icon: MessagesSquare, text: "A direct line to your SEO team" },
+  { icon: TrendingUp, text: "Which searches you show up for, and how high" },
+  { icon: Link2, text: "Other websites that now link to yours" },
+  { icon: BarChart3, text: "How many people find you through Google" },
+  { icon: MessagesSquare, text: "Ask your team anything, right here" },
 ];
 
 export default async function InvitePage({
@@ -99,11 +107,13 @@ export default async function InvitePage({
 
         <div className="relative max-w-md">
           <h2 className="text-[30px] leading-[1.15] font-semibold tracking-tight">
-            {isClient ? "Your SEO progress, in one place." : "Welcome to the team."}
+            {isClient
+              ? "See how your website is doing on Google."
+              : "Welcome to the team."}
           </h2>
           <p className="text-muted mt-4 text-[15px] leading-6">
             {isClient
-              ? "No spreadsheets, no attachments. Sign in any time to see exactly where your search visibility stands."
+              ? "Your SEO team keeps this up to date as they work, so you can look whenever you like — no waiting for a report to arrive."
               : "Set a password and you will land straight in the agency console."}
           </p>
           {isClient ? (
@@ -121,7 +131,7 @@ export default async function InvitePage({
         </div>
 
         <p className="text-faint relative text-[12px]">
-          This link works once and only for you.
+          This link was made for you, and works once.
         </p>
       </section>
 
